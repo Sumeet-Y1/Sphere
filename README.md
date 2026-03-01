@@ -6,26 +6,15 @@ Sphere is a full-stack community and news platform where people can join communi
 
 ---
 
-## 🚀 Features
-
-- **Communities** — Create or join communities around any topic. Post, comment, upvote, and debate.
-- **News Feed** — Categorized news sections: Sports, Geopolitics, Gaming, Tech, Entertainment and more — powered by NewsAPI.
-- **AI Integration** — Groq-powered AI for content moderation, news summarization, and personalized feed recommendations.
-- **Authentication** — Secure JWT-based auth with role management.
-- **Real-time Notifications** — Stay updated on replies, mentions, and trending posts.
-- **Multi-user & Scalable** — Built for communities of all sizes and all age groups.
-
----
-
 ## 🛠️ Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Backend | Java, Spring Boot |
+| Backend | Java 21, Spring Boot 3.5.11 |
 | Database | MySQL |
-| AI | Groq API |
+| AI | Groq API (LLaMA 3) |
 | News | NewsAPI |
-| Auth | JWT |
+| Auth | JWT (jjwt 0.12.6) |
 | Deployment | GCP / AWS / Render |
 
 ---
@@ -33,21 +22,51 @@ Sphere is a full-stack community and news platform where people can join communi
 ## 📁 Project Structure
 
 ```
-sphere/
-├── src/
-│   ├── main/
-│   │   ├── java/com/sphere/
-│   │   │   ├── auth/
-│   │   │   ├── community/
-│   │   │   ├── news/
-│   │   │   ├── ai/
-│   │   │   ├── user/
-│   │   │   └── SphereApplication.java
-│   │   └── resources/
-│   │       └── application.yml
-├── .gitignore
-├── pom.xml
-└── README.md
+com.sphere/
+├── admin/
+│   ├── controller/
+│   ├── dto/
+│   └── service/
+├── ai/
+│   └── service/
+├── auth/
+│   ├── controller/
+│   ├── dto/
+│   └── service/
+├── comment/
+│   ├── controller/
+│   ├── dto/
+│   ├── repository/
+│   └── service/
+├── common/
+│   ├── config/        (SecurityConfig, CORS)
+│   ├── exception/     (Global exception handler)
+│   ├── jwt/           (JwtUtil, JwtAuthFilter)
+│   └── response/      (Standard API response wrapper)
+├── community/
+│   ├── controller/
+│   ├── dto/
+│   ├── repository/
+│   └── service/
+├── news/
+│   ├── controller/
+│   ├── dto/
+│   └── service/
+├── notifications/
+│   ├── controller/
+│   ├── dto/
+│   ├── repository/
+│   └── service/
+├── post/
+│   ├── controller/
+│   ├── dto/
+│   ├── repository/
+│   └── service/
+└── user/
+    ├── controller/
+    ├── dto/
+    ├── repository/
+    └── service/
 ```
 
 ---
@@ -55,7 +74,7 @@ sphere/
 ## ⚙️ Getting Started
 
 ### Prerequisites
-- Java 17+
+- Java 21+
 - MySQL
 - Maven
 - Groq API Key
@@ -65,36 +84,59 @@ sphere/
 
 ```bash
 # Clone the repo
-git clone https://github.com/yourusername/sphere.git
-cd sphere
+git clone https://github.com/Sumeet-Y1/Sphere.git
+cd Sphere/sphere
+
+# Create the database
+mysql -u root -p
+CREATE DATABASE sphere_db;
 
 # Configure environment variables
-cp src/main/resources/application.yml.example src/main/resources/application.yml
-# Add your DB, Groq, and NewsAPI credentials
+# Create src/main/resources/application-local.yml and add your credentials
 
 # Run the app
-mvn spring-boot:run
+.\mvnw.cmd spring-boot:run
 ```
+
+---
+
+## 🔐 Auth Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/register` | Register a new user |
+| POST | `/api/auth/login` | Login and get JWT token |
 
 ---
 
 ## 🌍 Roadmap
 
 - [x] Project setup & architecture
-- [ ] User auth (JWT)
+- [x] Folder structure & package organization
+- [x] JWT utility & auth filter
+- [x] Spring Security configuration
+- [x] User entity & repository
+- [x] Auth service (register & login)
+- [ ] Auth controller
 - [ ] Community CRUD
 - [ ] Post & comment system
-- [ ] News feed integration
+- [ ] News feed integration (NewsAPI)
 - [ ] Groq AI moderation & summarization
 - [ ] Personalized feed recommendations
-- [ ] Real-time notifications
+- [ ] Real-time notifications (WebSocket)
+- [ ] Admin dashboard
 - [ ] Deployment
 
 ---
 
-## 🤝 Contributing
+## 🚀 Features
 
-This is a personal project currently in active development. Contributions, ideas, and feedback are welcome!
+- **Communities** — Create or join communities around any topic. Post, comment, upvote, and debate.
+- **News Feed** — Categorized news sections: Sports, Geopolitics, Gaming, Tech, Entertainment and more — powered by NewsAPI.
+- **AI Integration** — Groq-powered AI for content moderation, news summarization, and personalized feed recommendations.
+- **Authentication** — Secure JWT-based auth with role management.
+- **Real-time Notifications** — Stay updated on replies, mentions, and trending posts.
+- **Multi-user & Scalable** — Built for communities of all sizes and all age groups.
 
 ---
 
