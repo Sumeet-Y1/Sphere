@@ -2,7 +2,7 @@
 
 > One platform. Every conversation. Every story.
 
-Sphere is a full-stack community and news platform where people can join communities, discuss any topic, and stay updated with real-time news — all enhanced by AI-powered personalization and moderation.
+Sphere is a full-stack community and news platform where people can join communities, discuss any topic, and stay updated with real-time news  all enhanced by AI-powered personalization and moderation.
 
 ---
 
@@ -131,12 +131,12 @@ CREATE DATABASE sphere_db;
 
 ## 🚀 Features
 
-- **Communities** — Create or join communities around any topic. Post, comment, upvote, and debate.
-- **News Feed** — Categorized news sections: Sports, Geopolitics, Gaming, Tech, Entertainment and more — powered by NewsAPI.
-- **AI Integration** — Groq-powered AI for content moderation, news summarization, and personalized feed recommendations.
-- **Authentication** — Secure JWT-based auth with role management.
-- **Real-time Notifications** — Stay updated on replies, mentions, and trending posts.
-- **Multi-user & Scalable** — Built for communities of all sizes and all age groups.
+- **Communities** - Create or join communities around any topic. Post, comment, upvote, and debate.
+- **News Feed** - Categorized news sections: Sports, Geopolitics, Gaming, Tech, Entertainment and more powered by NewsAPI.
+- **AI Integration** - Groq-powered AI for content moderation, news summarization, and personalized feed recommendations.
+- **Authentication** - Secure JWT-based auth with role management.
+- **Real-time Notifications** - Stay updated on replies, mentions, and trending posts.
+- **Multi-user & Scalable** - Built for communities of all sizes and all age groups.
 
 ---
 
