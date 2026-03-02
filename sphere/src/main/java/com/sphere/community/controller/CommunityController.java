@@ -36,4 +36,15 @@ public class CommunityController {
     public ResponseEntity<List<CommunityResponse>> getMyCommunities() {
         return ResponseEntity.ok(communityService.getMyCommunities());
     }
+
+    @PostMapping("/{communityId}/join")
+    public ResponseEntity<CommunityResponse> joinCommunity(@PathVariable Long communityId) {
+        return ResponseEntity.ok(communityService.joinCommunity(communityId));
+    }
+
+    @DeleteMapping("/{communityId}/leave")
+    public ResponseEntity<Void> leaveCommunity(@PathVariable Long communityId) {
+        communityService.leaveCommunity(communityId);
+        return ResponseEntity.noContent().build();
+    }
 }
