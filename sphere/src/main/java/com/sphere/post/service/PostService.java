@@ -11,6 +11,10 @@ import com.sphere.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import com.sphere.post.Vote;
+import com.sphere.post.VoteType;
+import com.sphere.post.repository.VoteRepository;
+import java.util.Optional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,9 +23,54 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PostService {
 
+    private final VoteRepository voteRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final CommunityRepository communityRepository;
+
+    public PostResponse vote(Long postId, VoteType voteType) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        Optional<Vote> existingVote = voteRepository.findByPost_IdAndUser_Id(postId, user.getId());
+
+        if (existingVote.isPresent()) {
+            Vote vote = existingVote.get();
+            if (vote.getType() == voteType) {
+                // remove vote if same type
+                if (voteType == VoteType.UPVOTE) post.setUpvotes(post.getUpvotes() - 1);
+                else post.setDownvotes(post.getDownvotes() - 1);
+                voteRepository.delete(vote);
+            } else {
+                // switch vote
+                if (voteType == VoteType.UPVOTE) {
+                    post.setUpvotes(post.getUpvotes() + 1);
+                    post.setDownvotes(post.getDownvotes() - 1);
+                } else {
+                    post.setDownvotes(post.getDownvotes() + 1);
+                    post.setUpvotes(post.getUpvotes() - 1);
+                }
+                vote.setType(voteType);
+                voteRepository.save(vote);
+            }
+        } else {
+            Vote vote = Vote.builder()
+                    .user(user)
+                    .post(post)
+                    .type(voteType)
+                    .build();
+            voteRepository.save(vote);
+            if (voteType == VoteType.UPVOTE) post.setUpvotes(post.getUpvotes() + 1);
+            else post.setDownvotes(post.getDownvotes() + 1);
+        }
+
+        postRepository.save(post);
+        return mapToResponse(post);
+    }
 
     public PostResponse createPost(CreatePostRequest request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();

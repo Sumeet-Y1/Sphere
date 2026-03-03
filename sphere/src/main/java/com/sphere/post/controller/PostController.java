@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.sphere.post.VoteType;
 
 import java.util.List;
 
@@ -20,6 +21,11 @@ public class PostController {
     @PostMapping
     public ResponseEntity<PostResponse> createPost(@Valid @RequestBody CreatePostRequest request) {
         return ResponseEntity.ok(postService.createPost(request));
+    }
+
+    @PostMapping("/{postId}/vote")
+    public ResponseEntity<PostResponse> vote(@PathVariable Long postId, @RequestParam VoteType voteType) {
+        return ResponseEntity.ok(postService.vote(postId, voteType));
     }
 
     @GetMapping
