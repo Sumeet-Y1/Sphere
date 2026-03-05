@@ -12,6 +12,7 @@ import com.sphere.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import com.sphere.notifications.service.NotificationService;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,8 +24,10 @@ public class CommunityService {
     private final CommunityRepository communityRepository;
     private final UserRepository userRepository;
     private final CommunityMemberRepository communityMemberRepository;
+    private final NotificationService notificationService;
 
     public CommunityResponse createCommunity(CreateCommunityRequest request) {
+
         if (communityRepository.existsByName(request.getName())) {
             throw new RuntimeException("Community name already taken");
         }
@@ -99,6 +102,14 @@ public class CommunityService {
         communityMemberRepository.save(member);
         community.setMemberCount(community.getMemberCount() + 1);
         communityRepository.save(community);
+
+        if (!community.getOwner().getEmail().equals(email)) {
+            notificationService.notifyNewMember(
+                    community.getOwner().getUsername(),
+                    user.getUsername(),
+                    communityId
+            );
+        }
 
         return mapToResponse(community);
     }

@@ -11,6 +11,7 @@ import com.sphere.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import com.sphere.notifications.service.NotificationService;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,6 +23,7 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public CommentResponse createComment(CreateCommentRequest request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -35,6 +37,14 @@ public class CommentService {
         if (request.getParentId() != null) {
             parent = commentRepository.findById(request.getParentId())
                     .orElseThrow(() -> new RuntimeException("Parent comment not found"));
+        }
+
+        if (!post.getAuthor().getEmail().equals(email)) {
+            notificationService.notifyComment(
+                    post.getAuthor().getUsername(),
+                    author.getUsername(),
+                    post.getId()
+            );
         }
 
         Comment comment = Comment.builder()

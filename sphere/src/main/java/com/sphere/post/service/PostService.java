@@ -15,6 +15,7 @@ import com.sphere.post.Vote;
 import com.sphere.post.VoteType;
 import com.sphere.post.repository.VoteRepository;
 import java.util.Optional;
+import com.sphere.notifications.service.NotificationService;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,6 +28,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final CommunityRepository communityRepository;
+    private final NotificationService notificationService;
 
     public PostResponse vote(Long postId, VoteType voteType) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -37,6 +39,14 @@ public class PostService {
                 .orElseThrow(() -> new RuntimeException("Post not found"));
 
         Optional<Vote> existingVote = voteRepository.findByPost_IdAndUser_Id(postId, user.getId());
+
+        if (voteType == VoteType.UPVOTE && !post.getAuthor().getEmail().equals(email)) {
+            notificationService.notifyUpvote(
+                    post.getAuthor().getUsername(),
+                    user.getUsername(),
+                    post.getId()
+            );
+        }
 
         if (existingVote.isPresent()) {
             Vote vote = existingVote.get();
@@ -71,6 +81,7 @@ public class PostService {
         postRepository.save(post);
         return mapToResponse(post);
     }
+
 
     public PostResponse createPost(CreatePostRequest request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
