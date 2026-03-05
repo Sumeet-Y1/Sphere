@@ -30,11 +30,14 @@ public class AuthService {
             throw new RuntimeException("Username already taken");
         }
 
+        String defaultAvatar = "https://api.dicebear.com/7.x/avataaars/svg?seed=" + request.getUsername();
+
         User user = User.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Role.USER)
+                .avatarUrl(defaultAvatar)
                 .build();
 
         userRepository.save(user);
