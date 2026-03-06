@@ -1,6 +1,6 @@
 # 🌐 Sphere
 
-A full-stack community and news platform — think Reddit meets Instagram with AI superpowers.
+Sphere is a full-stack community and news platform where people can join communities, discuss any topic, and stay updated with real-time news  all enhanced by AI-powered personalization and moderation.
 
 ## 🚀 Features
 
