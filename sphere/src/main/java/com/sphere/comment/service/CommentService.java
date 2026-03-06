@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import com.sphere.notifications.service.NotificationService;
+import com.sphere.common.config.RateLimitService;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,11 +25,16 @@ public class CommentService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final RateLimitService rateLimitService;
 
     public CommentResponse createComment(CreateCommentRequest request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User author = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!rateLimitService.allowComment(email)) {
+            throw new RuntimeException("Comment rate limit exceeded. Maximum 30 comments per hour!");
+        }
 
         Post post = postRepository.findById(request.getPostId())
                 .orElseThrow(() -> new RuntimeException("Post not found"));

@@ -16,6 +16,7 @@ import com.sphere.post.VoteType;
 import com.sphere.post.repository.VoteRepository;
 import java.util.Optional;
 import com.sphere.notifications.service.NotificationService;
+import com.sphere.common.config.RateLimitService;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,6 +30,7 @@ public class PostService {
     private final UserRepository userRepository;
     private final CommunityRepository communityRepository;
     private final NotificationService notificationService;
+    private final RateLimitService rateLimitService;
 
     public PostResponse vote(Long postId, VoteType voteType) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -90,6 +92,10 @@ public class PostService {
 
         Community community = communityRepository.findById(request.getCommunityId())
                 .orElseThrow(() -> new RuntimeException("Community not found"));
+
+        if (!rateLimitService.allowPost(email)) {
+            throw new RuntimeException("Post rate limit exceeded. Maximum 10 posts per hour!");
+        }
 
         Post post = Post.builder()
                 .title(request.getTitle())

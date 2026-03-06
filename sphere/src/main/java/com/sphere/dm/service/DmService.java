@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import com.sphere.common.config.RateLimitService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -30,11 +31,16 @@ public class DmService {
     private final BlockRepository blockRepository;
     private final NotificationService notificationService;
     private final SimpMessagingTemplate messagingTemplate;
+    private final RateLimitService rateLimitService;
 
     public MessageResponse sendMessage(SendMessageRequest request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User sender = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!rateLimitService.allowDm(email)) {
+            throw new RuntimeException("DM rate limit exceeded. Maximum 50 DMs per hour!");
+        }
 
         User receiver = userRepository.findByUsername(request.getReceiverUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
