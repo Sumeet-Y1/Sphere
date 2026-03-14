@@ -1,6 +1,7 @@
 package com.sphere.user.controller;
 
 import com.sphere.common.config.RateLimitService;
+import com.sphere.common.response.ApiResponse;
 import com.sphere.common.storage.S3Service;
 import com.sphere.user.User;
 import com.sphere.user.dto.UpdateProfileRequest;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
@@ -67,4 +69,23 @@ public class UserController {
         request.setAvatarUrl("https://api.dicebear.com/7.x/avataaars/svg?seed=" + user.getUsername());
         return ResponseEntity.ok(userService.updateProfile(request));
     }
+
+    @PutMapping("/me/password")
+    public ResponseEntity<ApiResponse> changePassword(@RequestBody ChangePasswordRequest request) {
+        userService.changePassword(request.currentPassword(), request.newPassword());
+        return ResponseEntity.ok(new ApiResponse(true, "Password changed successfully!", null));
+    }
+
+    @DeleteMapping("/me")
+    public ResponseEntity<ApiResponse> deleteAccount() {
+        userService.deleteAccount();
+        return ResponseEntity.ok(new ApiResponse(true, "Account deleted successfully!", null));
+    }
+
+    @GetMapping("/me/blocked")
+    public ResponseEntity<List<UserResponse>> getBlockedUsers() {
+        return ResponseEntity.ok(userService.getBlockedUsers());
+    }
+
+    record ChangePasswordRequest(String currentPassword, String newPassword) {}
 }

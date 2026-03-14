@@ -7,7 +7,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import com.sphere.post.VoteType;
+import com.sphere.common.response.ApiResponse;
 
 import java.util.List;
 
@@ -21,6 +23,18 @@ public class PostController {
     @PostMapping
     public ResponseEntity<PostResponse> createPost(@Valid @RequestBody CreatePostRequest request) {
         return ResponseEntity.ok(postService.createPost(request));
+    }
+
+    @PostMapping("/upload/photos")
+    public ResponseEntity<ApiResponse> uploadPhotos(@RequestParam("files") List<MultipartFile> files) {
+        List<String> urls = postService.uploadPhotos(files);
+        return ResponseEntity.ok(new ApiResponse(true, "Photos uploaded successfully!", urls));
+    }
+
+    @PostMapping("/upload/video")
+    public ResponseEntity<ApiResponse> uploadVideo(@RequestParam("file") MultipartFile file) {
+        String url = postService.uploadVideo(file);
+        return ResponseEntity.ok(new ApiResponse(true, "Video uploaded successfully!", url));
     }
 
     @PostMapping("/{postId}/vote")

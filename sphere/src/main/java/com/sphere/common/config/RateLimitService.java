@@ -15,6 +15,8 @@ public class RateLimitService {
     private final ConcurrentHashMap<String, Bucket> commentBuckets = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Bucket> dmBuckets = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Bucket> uploadBuckets = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Bucket> photoBuckets = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Bucket> videoBuckets = new ConcurrentHashMap<>();
 
     private Bucket createPostBucket() {
         return Bucket.builder()
@@ -40,6 +42,20 @@ public class RateLimitService {
                 .build();
     }
 
+    // 3 photos per day
+    private Bucket createPhotoBucket() {
+        return Bucket.builder()
+                .addLimit(Bandwidth.classic(3, Refill.intervally(3, Duration.ofDays(1))))
+                .build();
+    }
+
+    // 1 video per day
+    private Bucket createVideoBucket() {
+        return Bucket.builder()
+                .addLimit(Bandwidth.classic(1, Refill.intervally(1, Duration.ofDays(1))))
+                .build();
+    }
+
     public boolean allowPost(String userEmail) {
         return postBuckets.computeIfAbsent(userEmail, k -> createPostBucket()).tryConsume(1);
     }
@@ -54,5 +70,15 @@ public class RateLimitService {
 
     public boolean allowUpload(String userEmail) {
         return uploadBuckets.computeIfAbsent(userEmail, k -> createUploadBucket()).tryConsume(1);
+    }
+
+    // count per photo — call once per photo uploaded (max 3)
+    public boolean allowPhotoUpload(String userEmail, int count) {
+        return photoBuckets.computeIfAbsent(userEmail, k -> createPhotoBucket()).tryConsume(count);
+    }
+
+    // 1 video per day
+    public boolean allowVideoUpload(String userEmail) {
+        return videoBuckets.computeIfAbsent(userEmail, k -> createVideoBucket()).tryConsume(1);
     }
 }

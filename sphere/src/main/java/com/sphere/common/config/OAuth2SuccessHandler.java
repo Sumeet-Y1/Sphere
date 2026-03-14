@@ -1,6 +1,7 @@
 package com.sphere.common.config;
 
 import com.sphere.common.jwt.JwtUtil;
+import com.sphere.user.AuthProvider;
 import com.sphere.user.Role;
 import com.sphere.user.User;
 import com.sphere.user.repository.UserRepository;
@@ -40,8 +41,15 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                     .role(Role.USER)
                     .avatarUrl(picture)
                     .enabled(true)
+                    .authProvider(AuthProvider.GOOGLE)
                     .build());
         });
+
+        // if existing user logged in via Google, update authProvider
+        if (user.getAuthProvider() != AuthProvider.GOOGLE) {
+            user.setAuthProvider(AuthProvider.GOOGLE);
+            userRepository.save(user);
+        }
 
         // generate JWT token
         String token = jwtUtil.generateToken(user.getEmail());

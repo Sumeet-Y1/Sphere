@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name = "posts")
@@ -29,6 +30,15 @@ public class Post {
     private String imageUrl;
 
     private String linkUrl;
+
+    // multiple media URLs (photos + video)
+    @ElementCollection
+    @CollectionTable(name = "post_media", joinColumns = @JoinColumn(name = "post_id"))
+    @Column(name = "media_url")
+    private List<String> mediaUrls;
+
+    @Enumerated(EnumType.STRING)
+    private MediaType mediaType; // PHOTO or VIDEO
 
     @Enumerated(EnumType.STRING)
     private PostType type;

@@ -76,16 +76,16 @@ public class DmService {
 
         MessageResponse response = mapToMessageResponse(message);
 
-        // send real time message via WebSocket
+        // send real time message via WebSocket using email as principal
         messagingTemplate.convertAndSendToUser(
-                receiver.getUsername(),
+                receiver.getEmail(),
                 "/queue/messages",
                 response
         );
 
-        // send notification
+        // send notification using email as principal
         notificationService.sendNotification(
-                receiver.getUsername(),
+                receiver.getEmail(),
                 "DM",
                 sender.getUsername() + " sent you a message",
                 conversation.getId()
@@ -118,7 +118,6 @@ public class DmService {
             throw new RuntimeException("You are not part of this conversation");
         }
 
-        // mark messages as read
         List<Message> messages = messageRepository
                 .findByConversation_IdOrderByCreatedAtAsc(conversationId);
 

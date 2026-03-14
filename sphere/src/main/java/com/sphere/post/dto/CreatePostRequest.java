@@ -1,9 +1,12 @@
 package com.sphere.post.dto;
 
+import com.sphere.post.MediaType;
 import com.sphere.post.PostType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+
+import java.util.List;
 
 @Data
 public class CreatePostRequest {
@@ -14,6 +17,9 @@ public class CreatePostRequest {
     private String content;
     private String imageUrl;
     private String linkUrl;
+
+    private List<String> mediaUrls;
+    private MediaType mediaType;
 
     @NotNull(message = "Post type is required")
     private PostType type;

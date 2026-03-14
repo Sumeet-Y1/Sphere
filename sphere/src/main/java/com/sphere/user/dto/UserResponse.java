@@ -18,5 +18,8 @@ public class UserResponse {
     private String bio;
     private String avatarUrl;
     private String role;
+    private String authProvider;
+    private int followersCount;
+    private int followingCount;
     private LocalDateTime createdAt;
 }

@@ -2,15 +2,18 @@ package com.sphere.post.service;
 
 import com.sphere.community.Community;
 import com.sphere.community.repository.CommunityRepository;
+import com.sphere.post.MediaType;
 import com.sphere.post.Post;
 import com.sphere.post.dto.CreatePostRequest;
 import com.sphere.post.dto.PostResponse;
 import com.sphere.post.repository.PostRepository;
 import com.sphere.user.User;
 import com.sphere.user.repository.UserRepository;
+import com.sphere.common.storage.CloudinaryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import com.sphere.post.Vote;
 import com.sphere.post.VoteType;
 import com.sphere.post.repository.VoteRepository;
@@ -31,6 +34,40 @@ public class PostService {
     private final CommunityRepository communityRepository;
     private final NotificationService notificationService;
     private final RateLimitService rateLimitService;
+    private final CloudinaryService cloudinaryService;
+
+    public List<String> uploadPhotos(List<MultipartFile> files) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        if (files.size() > 3) {
+            throw new RuntimeException("Maximum 3 photos allowed per post!");
+        }
+        if (!rateLimitService.allowPhotoUpload(email, files.size())) {
+            throw new RuntimeException("Photo upload limit exceeded. Maximum 3 photos per day!");
+        }
+
+        return files.stream().map(file -> {
+            try {
+                return cloudinaryService.uploadPhoto(file);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to upload photo: " + e.getMessage());
+            }
+        }).collect(Collectors.toList());
+    }
+
+    public String uploadVideo(MultipartFile file) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        if (!rateLimitService.allowVideoUpload(email)) {
+            throw new RuntimeException("Video upload limit exceeded. Maximum 1 video per day!");
+        }
+
+        try {
+            return cloudinaryService.uploadVideo(file);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to upload video: " + e.getMessage());
+        }
+    }
 
     public PostResponse vote(Long postId, VoteType voteType) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -53,12 +90,10 @@ public class PostService {
         if (existingVote.isPresent()) {
             Vote vote = existingVote.get();
             if (vote.getType() == voteType) {
-                // remove vote if same type
                 if (voteType == VoteType.UPVOTE) post.setUpvotes(post.getUpvotes() - 1);
                 else post.setDownvotes(post.getDownvotes() - 1);
                 voteRepository.delete(vote);
             } else {
-                // switch vote
                 if (voteType == VoteType.UPVOTE) {
                     post.setUpvotes(post.getUpvotes() + 1);
                     post.setDownvotes(post.getDownvotes() - 1);
@@ -84,7 +119,6 @@ public class PostService {
         return mapToResponse(post);
     }
 
-
     public PostResponse createPost(CreatePostRequest request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User author = userRepository.findByEmail(email)
@@ -103,6 +137,8 @@ public class PostService {
                 .imageUrl(request.getImageUrl())
                 .linkUrl(request.getLinkUrl())
                 .type(request.getType())
+                .mediaUrls(request.getMediaUrls())
+                .mediaType(request.getMediaType())
                 .author(author)
                 .community(community)
                 .build();
@@ -164,7 +200,10 @@ public class PostService {
                 .imageUrl(post.getImageUrl())
                 .linkUrl(post.getLinkUrl())
                 .type(post.getType())
+                .mediaUrls(post.getMediaUrls())
+                .mediaType(post.getMediaType() != null ? post.getMediaType().name() : null)
                 .authorUsername(post.getAuthor().getUsername())
+                .authorAvatarUrl(post.getAuthor().getAvatarUrl())
                 .communityName(post.getCommunity().getName())
                 .upvotes(post.getUpvotes())
                 .downvotes(post.getDownvotes())

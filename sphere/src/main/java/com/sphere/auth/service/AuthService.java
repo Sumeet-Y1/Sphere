@@ -12,7 +12,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import com.sphere.auth.service.OtpService;
 
 @Service
 @RequiredArgsConstructor
@@ -63,5 +62,13 @@ public class AuthService {
 
         String token = jwtUtil.generateToken(user.getEmail());
         return new AuthResponse(token, user.getUsername(), user.getEmail(), user.getRole().name());
+    }
+
+    public void resetPassword(String email, String code, String newPassword) {
+        otpService.verifyOtp(email, code);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
     }
 }
