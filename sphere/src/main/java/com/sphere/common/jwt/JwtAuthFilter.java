@@ -1,5 +1,8 @@
 package com.sphere.common.jwt;
 
+import com.sphere.common.config.TokenBlacklistService;
+import com.sphere.user.User;
+import com.sphere.user.repository.UserRepository;
 import com.sphere.user.service.UserDetailsServiceImpl;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -21,6 +24,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final UserDetailsServiceImpl userDetailsService;
+    private final TokenBlacklistService tokenBlacklistService;
+    private final UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -36,15 +41,35 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String token = authHeader.substring(7);
 
+        // check if token is blacklisted
+        if (tokenBlacklistService.isBlacklisted(token)) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("{\"message\": \"Account banned!\"}");
+            return;
+        }
+
         if (jwtUtil.isTokenValid(token)) {
             String email = jwtUtil.extractEmail(token);
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-            UsernamePasswordAuthenticationToken authToken =
-                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-            authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            // check if user is banned on every request
+            userRepository.findByEmail(email).ifPresent(user -> {
+                if (user.isBanned()) {
+                    tokenBlacklistService.blacklistToken(token);
+                }
+            });
 
-            SecurityContextHolder.getContext().setAuthentication(authToken);
+            // re-check after potential blacklisting
+            if (!tokenBlacklistService.isBlacklisted(token)) {
+                UsernamePasswordAuthenticationToken authToken =
+                        new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                SecurityContextHolder.getContext().setAuthentication(authToken);
+            } else {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("{\"message\": \"Account banned!\"}");
+                return;
+            }
         }
 
         filterChain.doFilter(request, response);

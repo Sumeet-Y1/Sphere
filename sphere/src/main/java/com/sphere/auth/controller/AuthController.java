@@ -33,9 +33,14 @@ public class AuthController {
         return ResponseEntity.ok(authService.login(request));
     }
 
+    // 👇 dedicated admin login — checks ROLE_ADMIN before issuing token
+    @PostMapping("/admin/login")
+    public ResponseEntity<AuthResponse> adminLogin(@Valid @RequestBody LoginRequest request) {
+        return ResponseEntity.ok(authService.adminLogin(request));
+    }
+
     @PostMapping("/forgot-password")
     public ResponseEntity<ApiResponse> forgotPassword(@RequestBody EmailRequest request) {
-        // check if user exists and is not a Google user
         userRepository.findByEmail(request.email()).ifPresent(user -> {
             if (user.getAuthProvider() == AuthProvider.GOOGLE) {
                 throw new RuntimeException("This account uses Google Sign-In. Please login with Google!");

@@ -19,6 +19,7 @@ public class UserResponse {
     private String avatarUrl;
     private String role;
     private String authProvider;
+    private boolean banned;
     private int followersCount;
     private int followingCount;
     private LocalDateTime createdAt;

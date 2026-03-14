@@ -60,6 +60,30 @@ public class AuthService {
             throw new RuntimeException("Please verify your email before logging in!");
         }
 
+        if (user.isBanned()) {
+            throw new RuntimeException("Your account has been banned!");
+        }
+
+        String token = jwtUtil.generateToken(user.getEmail());
+        return new AuthResponse(token, user.getUsername(), user.getEmail(), user.getRole().name());
+    }
+
+    public AuthResponse adminLogin(LoginRequest request) {
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+        );
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!user.isEnabled()) {
+            throw new RuntimeException("Account not verified!");
+        }
+
+        if (user.getRole() != Role.ADMIN) {
+            throw new RuntimeException("Access denied! Admins only.");
+        }
+
         String token = jwtUtil.generateToken(user.getEmail());
         return new AuthResponse(token, user.getUsername(), user.getEmail(), user.getRole().name());
     }

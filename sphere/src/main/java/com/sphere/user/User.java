@@ -38,7 +38,11 @@ public class User {
     @Builder.Default
     private AuthProvider authProvider = AuthProvider.LOCAL;
 
+    @Builder.Default
     private boolean enabled = true;
+
+    @Builder.Default
+    private boolean banned = false;
 
     private LocalDateTime createdAt;
 

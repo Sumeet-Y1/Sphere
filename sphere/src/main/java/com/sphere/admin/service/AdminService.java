@@ -25,14 +25,14 @@ public class AdminService {
     public void banUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        user.setEnabled(false);
+        user.setBanned(true);
         userRepository.save(user);
     }
 
     public void unbanUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        user.setEnabled(true);
+        user.setBanned(false);
         userRepository.save(user);
     }
 
@@ -88,6 +88,7 @@ public class AdminService {
                 .bio(user.getBio())
                 .avatarUrl(user.getAvatarUrl())
                 .role(user.getRole().name())
+                .banned(user.isBanned())
                 .createdAt(user.getCreatedAt())
                 .build();
     }
