@@ -127,7 +127,7 @@ public class DmService {
                     m.setRead(true);
                     messageRepository.save(m);
                 });
-
+ 
         return messages.stream()
                 .map(this::mapToMessageResponse)
                 .collect(Collectors.toList());
