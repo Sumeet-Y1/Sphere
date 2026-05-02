@@ -43,7 +43,7 @@ public class OtpService {
 
         Otp otp = Otp.builder()
                 .email(email)
-                .code(code)
+                .code(code) 
                 .used(false)
                 .build();
 

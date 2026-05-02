@@ -94,5 +94,5 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
-    }
+    } 
 }
