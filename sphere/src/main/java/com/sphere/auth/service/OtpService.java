@@ -45,7 +45,7 @@ public class OtpService {
                 .email(email)
                 .code(code) 
                 .used(false)
-                .build();
+                .build();  
 
         otpRepository.save(otp);
         sendPasswordResetEmail(email, code);

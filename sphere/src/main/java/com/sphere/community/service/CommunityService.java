@@ -17,7 +17,7 @@ import com.sphere.notifications.service.NotificationService;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Service 
+@Service
 @RequiredArgsConstructor
 public class CommunityService {
 

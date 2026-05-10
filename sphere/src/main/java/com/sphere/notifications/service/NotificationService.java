@@ -26,12 +26,12 @@ public class NotificationService {
                 targetUsername,
                 "/queue/notifications",
                 event
-        );
+        );      
     }
-
+      
 
     public void notifyComment(String postAuthorUsername, String commenterUsername, Long postId) {
-        System.out.println("🔔 Sending notification to: " + postAuthorUsername);
+        System.out.println("Sending notification to: " + postAuthorUsername);
         sendNotification(
                 postAuthorUsername,
                 "COMMENT",
