@@ -8,6 +8,7 @@ import com.sphere.post.Post;
 import com.sphere.post.repository.PostRepository;
 import com.sphere.user.User;
 import com.sphere.user.repository.UserRepository;
+import com.sphere.user.service.UserPrivacyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ public class CommentService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final RateLimitService rateLimitService;
+    private final UserPrivacyService userPrivacyService;
 
     public CommentResponse createComment(CreateCommentRequest request) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -38,6 +40,7 @@ public class CommentService {
 
         Post post = postRepository.findById(request.getPostId())
                 .orElseThrow(() -> new RuntimeException("Post not found"));
+        userPrivacyService.assertCanViewProfile(author, post.getAuthor());
 
         Comment parent = null;
         if (request.getParentId() != null) {
@@ -69,6 +72,13 @@ public class CommentService {
     }
 
     public List<CommentResponse> getCommentsByPost(Long postId) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User viewer = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+        userPrivacyService.assertCanViewProfile(viewer, post.getAuthor());
+
         List<Comment> topLevel = commentRepository
                 .findByPost_IdAndParentIsNullOrderByCreatedAtDesc(postId);
 

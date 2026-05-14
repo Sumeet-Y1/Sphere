@@ -22,5 +22,10 @@ public class UserResponse {
     private boolean banned;
     private int followersCount;
     private int followingCount;
+    private boolean privateAccount;
+    private boolean following;
+    private boolean requestedFollow;
+    private boolean canViewProfile;
+    private boolean ownProfile;
     private LocalDateTime createdAt;
 }

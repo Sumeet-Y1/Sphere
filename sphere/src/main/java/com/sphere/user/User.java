@@ -44,6 +44,9 @@ public class User {
     @Builder.Default
     private boolean banned = false;
 
+    @Builder.Default
+    private boolean privateAccount = false;
+
     private LocalDateTime createdAt;
 
     @PrePersist

@@ -42,8 +42,13 @@ public class DmService {
             throw new RuntimeException("DM rate limit exceeded. Maximum 50 DMs per hour!");
         }
 
-        User receiver = userRepository.findByUsername(request.getReceiverUsername())
+        String receiverUsername = request.getReceiverUsername() == null ? "" : request.getReceiverUsername().trim();
+        User receiver = userRepository.findByUsernameIgnoreCase(receiverUsername)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (sender.getId().equals(receiver.getId())) {
+            throw new RuntimeException("You cannot message yourself");
+        }
 
         if (blockRepository.existsByBlockerAndBlocked(receiver, sender)) {
             throw new RuntimeException("You cannot message this user");

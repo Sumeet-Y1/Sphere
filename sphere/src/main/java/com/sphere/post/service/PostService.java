@@ -9,6 +9,7 @@ import com.sphere.post.dto.PostResponse;
 import com.sphere.post.repository.PostRepository;
 import com.sphere.user.User;
 import com.sphere.user.repository.UserRepository;
+import com.sphere.user.service.UserPrivacyService;
 import com.sphere.common.storage.CloudinaryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -35,6 +36,7 @@ public class PostService {
     private final NotificationService notificationService;
     private final RateLimitService rateLimitService;
     private final CloudinaryService cloudinaryService;
+    private final UserPrivacyService userPrivacyService;
 
     public List<String> uploadPhotos(List<MultipartFile> files) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -148,21 +150,27 @@ public class PostService {
     }
 
     public PostResponse getPost(Long postId) {
+        User viewer = getCurrentUser();
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
+        userPrivacyService.assertCanViewProfile(viewer, post.getAuthor());
         return mapToResponse(post);
     }
 
     public List<PostResponse> getAllPosts() {
+        User viewer = getCurrentUser();
         return postRepository.findAllByOrderByCreatedAtDesc()
                 .stream()
+                .filter(post -> userPrivacyService.canViewProfile(viewer, post.getAuthor()))
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
     public List<PostResponse> getPostsByCommunity(Long communityId) {
+        User viewer = getCurrentUser();
         return postRepository.findByCommunity_IdOrderByCreatedAtDesc(communityId)
                 .stream()
+                .filter(post -> userPrivacyService.canViewProfile(viewer, post.getAuthor()))
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -172,6 +180,18 @@ public class PostService {
         User author = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         return postRepository.findByAuthor_IdOrderByCreatedAtDesc(author.getId())
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    public List<PostResponse> getPostsByUsername(String username) {
+        User viewer = getCurrentUser();
+        User target = userRepository.findByUsernameIgnoreCase(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        userPrivacyService.assertCanViewProfile(viewer, target);
+
+        return postRepository.findByAuthor_UsernameIgnoreCaseOrderByCreatedAtDesc(target.getUsername())
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -210,5 +230,11 @@ public class PostService {
                 .commentCount(post.getCommentCount())
                 .createdAt(post.getCreatedAt())
                 .build();
+    }
+
+    private User getCurrentUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
     }
 }

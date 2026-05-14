@@ -4,6 +4,8 @@ import com.sphere.user.User;
 import com.sphere.user.dto.UpdateProfileRequest;
 import com.sphere.user.dto.UserResponse;
 import com.sphere.user.repository.BlockRepository;
+import com.sphere.user.repository.FollowRepository;
+import com.sphere.user.repository.FollowRequestRepository;
 import com.sphere.user.repository.UserRepository;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,20 +24,22 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final BlockRepository blockRepository;
+    private final FollowRepository followRepository;
+    private final FollowRequestRepository followRequestRepository;
     private final PasswordEncoder passwordEncoder;
     private final EntityManager entityManager;
+    private final UserPrivacyService userPrivacyService;
 
     public UserResponse getProfile(String username) {
-        User user = userRepository.findByUsername(username)
+        User viewer = getCurrentUser();
+        User user = userRepository.findByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        return mapToResponse(user);
+        return mapToResponse(user, viewer);
     }
 
     public UserResponse getMyProfile() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        return mapToResponse(user);
+        User user = getCurrentUser();
+        return mapToResponse(user, user);
     }
 
     public UserResponse updateProfile(UpdateProfileRequest request) {
@@ -42,12 +47,30 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        if (request.getUsername() != null) user.setUsername(request.getUsername());
+        if (request.getUsername() != null) {
+            String normalizedUsername = request.getUsername().trim();
+            if (normalizedUsername.isEmpty()) {
+                throw new RuntimeException("Username cannot be empty");
+            }
+            if (!normalizedUsername.equals(user.getUsername()) && userRepository.existsByUsername(normalizedUsername)) {
+                throw new RuntimeException("Username is already taken");
+            }
+
+            boolean shouldRefreshDefaultAvatar = user.getAvatarUrl() == null
+                    || user.getAvatarUrl().contains("api.dicebear.com/7.x/avataaars/svg?seed=");
+
+            user.setUsername(normalizedUsername);
+
+            if (shouldRefreshDefaultAvatar && request.getAvatarUrl() == null) {
+                user.setAvatarUrl(defaultAvatarUrl(normalizedUsername));
+            }
+        }
         if (request.getBio() != null) user.setBio(request.getBio());
         if (request.getAvatarUrl() != null) user.setAvatarUrl(request.getAvatarUrl());
+        if (request.getPrivateAccount() != null) user.setPrivateAccount(request.getPrivateAccount());
 
         userRepository.save(user);
-        return mapToResponse(user);
+        return mapToResponse(user, user);
     }
 
     public User getUserByEmail(String email) {
@@ -156,26 +179,51 @@ public class UserService {
     }
 
     public List<UserResponse> getBlockedUsers() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = getCurrentUser();
         return blockRepository.findByBlocker(user)
                 .stream()
-                .map(block -> mapToResponse(block.getBlocked()))
+                .map(block -> mapToResponse(block.getBlocked(), user))
                 .collect(Collectors.toList());
     }
 
-    private UserResponse mapToResponse(User user) {
+    private User getCurrentUser() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    private UserResponse mapToResponse(User user, User viewer) {
+        boolean ownProfile = viewer != null && viewer.getId().equals(user.getId());
+        boolean following = viewer != null
+                && !ownProfile
+                && followRepository.existsByFollowerAndFollowing(viewer, user);
+        boolean requestedFollow = viewer != null
+                && !ownProfile
+                && followRequestRepository.existsByRequesterAndTarget(viewer, user);
+        boolean canViewProfile = userPrivacyService.canViewProfile(viewer, user);
+
         return UserResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
-                .email(user.getEmail())
-                .bio(user.getBio())
+                .email(ownProfile ? user.getEmail() : null)
+                .bio(canViewProfile ? user.getBio() : null)
                 .avatarUrl(user.getAvatarUrl())
                 .role(user.getRole().name())
                 .authProvider(user.getAuthProvider().name())
+                .banned(user.isBanned())
+                .followersCount(followRepository.countByFollowing(user))
+                .followingCount(followRepository.countByFollower(user))
+                .privateAccount(user.isPrivateAccount())
+                .following(following)
+                .requestedFollow(requestedFollow)
+                .canViewProfile(canViewProfile)
+                .ownProfile(ownProfile)
                 .createdAt(user.getCreatedAt())
                 .build();
+    }
+
+    private String defaultAvatarUrl(String username) {
+        return "https://api.dicebear.com/7.x/avataaars/svg?seed=" + Objects.requireNonNull(username);
     }
 
 }
