@@ -1,7 +1,7 @@
 FROM eclipse-temurin:21-jdk-alpine AS build
 WORKDIR /app
 RUN apk add --no-cache maven
-COPY . .
+COPY sphere/ .
 RUN mvn clean package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine
