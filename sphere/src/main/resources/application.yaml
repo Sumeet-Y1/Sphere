@@ -27,6 +27,7 @@ server:
 
 jwt:
   secret: ${JWT_SECRET:sphere-super-secret-jwt-key-2024}
+  expiration: ${JWT_EXPIRATION:86400000}
 
 groq:
   api:
