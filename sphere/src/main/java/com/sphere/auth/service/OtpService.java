@@ -3,12 +3,14 @@ package com.sphere.auth.service;
 import com.sphere.auth.Otp;
 import com.sphere.auth.repository.OtpRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.mail.internet.MimeMessage;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.LocalDateTime;
 import java.util.Random;
 
@@ -17,20 +19,19 @@ import java.util.Random;
 public class OtpService {
 
     private final OtpRepository otpRepository;
-    private final JavaMailSender mailSender;
+
+    @Value("${resend.api.key:}")
+    private String resendApiKey;
 
     @Transactional
     public void sendOtp(String email) {
         otpRepository.deleteByEmail(email);
-
         String code = String.format("%06d", new Random().nextInt(999999));
-
         Otp otp = Otp.builder()
                 .email(email)
                 .code(code)
                 .used(false)
                 .build();
-
         otpRepository.save(otp);
         sendOtpEmail(email, code);
     }
@@ -38,15 +39,12 @@ public class OtpService {
     @Transactional
     public void sendPasswordResetOtp(String email) {
         otpRepository.deleteByEmail(email);
-
         String code = String.format("%06d", new Random().nextInt(999999));
-
         Otp otp = Otp.builder()
                 .email(email)
-                .code(code) 
+                .code(code)
                 .used(false)
-                .build();  
-
+                .build();
         otpRepository.save(otp);
         sendPasswordResetEmail(email, code);
     }
@@ -55,44 +53,59 @@ public class OtpService {
     public boolean verifyOtp(String email, String code) {
         Otp otp = otpRepository.findByEmailAndCodeAndUsedFalse(email, code)
                 .orElseThrow(() -> new RuntimeException("Invalid or expired OTP"));
-
         if (otp.getExpiresAt().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("OTP has expired");
         }
-
         otp.setUsed(true);
         otpRepository.save(otp);
         return true;
     }
 
     private void sendOtpEmail(String email, String code) {
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom("noreply.sphereauth@gmail.com");
-            helper.setTo(email);
-            helper.setSubject("Your Sphere Verification Code");
-            helper.setText(buildVerifyEmailTemplate(code), true);
-            mailSender.send(message);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException("Failed to send OTP email: " + e.getMessage());
-        }
+        sendEmail(email, "Your Sphere Verification Code", buildVerifyEmailTemplate(code));
     }
 
     private void sendPasswordResetEmail(String email, String code) {
+        sendEmail(email, "Reset your Sphere password", buildPasswordResetTemplate(code));
+    }
+
+    private void sendEmail(String to, String subject, String html) {
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom("noreply.sphereauth@gmail.com");
-            helper.setTo(email);
-            helper.setSubject("Reset your Sphere password");
-            helper.setText(buildPasswordResetTemplate(code), true);
-            mailSender.send(message);
+            String body = """
+                    {
+                      "from": "Sphere <onboarding@resend.dev>",
+                      "to": ["%s"],
+                      "subject": "%s",
+                      "html": %s
+                    }
+                    """.formatted(to, subject, toJsonString(html));
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.resend.com/emails"))
+                    .header("Authorization", "Bearer " + resendApiKey)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(body))
+                    .build();
+
+            HttpResponse<String> response = HttpClient.newHttpClient()
+                    .send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() != 200 && response.statusCode() != 201) {
+                throw new RuntimeException("Resend API error: " + response.body());
+            }
         } catch (Exception e) {
             e.printStackTrace();
-            throw new RuntimeException("Failed to send password reset email: " + e.getMessage());
+            throw new RuntimeException("Failed to send email: " + e.getMessage());
         }
+    }
+
+    private String toJsonString(String html) {
+        return "\"" + html
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t") + "\"";
     }
 
     private String buildVerifyEmailTemplate(String code) {
