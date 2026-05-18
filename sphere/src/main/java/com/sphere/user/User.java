@@ -47,6 +47,9 @@ public class User {
     @Builder.Default
     private boolean privateAccount = false;
 
+    @Builder.Default
+    private String theme = "dark";
+
     private LocalDateTime createdAt;
 
     @PrePersist

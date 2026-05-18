@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class UserService {
+    private static final List<String> ALLOWED_THEMES = List.of("dark", "dim");
 
     private final UserRepository userRepository;
     private final BlockRepository blockRepository;
@@ -68,6 +69,7 @@ public class UserService {
         if (request.getBio() != null) user.setBio(request.getBio());
         if (request.getAvatarUrl() != null) user.setAvatarUrl(request.getAvatarUrl());
         if (request.getPrivateAccount() != null) user.setPrivateAccount(request.getPrivateAccount());
+        if (request.getTheme() != null) user.setTheme(normalizeTheme(request.getTheme()));
 
         userRepository.save(user);
         return mapToResponse(user, user);
@@ -214,6 +216,7 @@ public class UserService {
                 .followersCount(followRepository.countByFollowing(user))
                 .followingCount(followRepository.countByFollower(user))
                 .privateAccount(user.isPrivateAccount())
+                .theme(normalizeTheme(user.getTheme()))
                 .following(following)
                 .requestedFollow(requestedFollow)
                 .canViewProfile(canViewProfile)
@@ -224,6 +227,19 @@ public class UserService {
 
     private String defaultAvatarUrl(String username) {
         return "https://api.dicebear.com/7.x/avataaars/svg?seed=" + Objects.requireNonNull(username);
+    }
+
+    private String normalizeTheme(String theme) {
+        if (theme == null) {
+            return "dark";
+        }
+
+        String normalizedTheme = theme.trim().toLowerCase();
+        if (!ALLOWED_THEMES.contains(normalizedTheme)) {
+            throw new RuntimeException("Unsupported theme");
+        }
+
+        return normalizedTheme;
     }
 
 }

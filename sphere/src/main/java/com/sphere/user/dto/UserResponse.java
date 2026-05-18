@@ -23,6 +23,7 @@ public class UserResponse {
     private int followersCount;
     private int followingCount;
     private boolean privateAccount;
+    private String theme;
     private boolean following;
     private boolean requestedFollow;
     private boolean canViewProfile;

@@ -45,7 +45,8 @@ public class AuthService {
         userRepository.save(user);
         otpService.sendOtp(request.getEmail());
 
-        return new AuthResponse(null, user.getUsername(), user.getEmail(), user.getRole().name());
+        return new AuthResponse(null, user.getUsername(), user.getEmail(), user.getRole().name(),
+                user.getAvatarUrl(), user.getAuthProvider().name(), user.getTheme());
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -65,7 +66,8 @@ public class AuthService {
         }
 
         String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponse(token, user.getUsername(), user.getEmail(), user.getRole().name());
+        return new AuthResponse(token, user.getUsername(), user.getEmail(), user.getRole().name(),
+                user.getAvatarUrl(), user.getAuthProvider().name(), user.getTheme());
     }
 
     public AuthResponse adminLogin(LoginRequest request) {
@@ -85,7 +87,8 @@ public class AuthService {
         }
 
         String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponse(token, user.getUsername(), user.getEmail(), user.getRole().name());
+        return new AuthResponse(token, user.getUsername(), user.getEmail(), user.getRole().name(),
+                user.getAvatarUrl(), user.getAuthProvider().name(), user.getTheme());
     }
 
     public void resetPassword(String email, String code, String newPassword) {
