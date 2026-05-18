@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class UserService {
-    private static final List<String> ALLOWED_THEMES = List.of("dark", "dim");
+    private static final List<String> ALLOWED_THEMES = List.of("dark", "dim", "light");
 
     private final UserRepository userRepository;
     private final BlockRepository blockRepository;
