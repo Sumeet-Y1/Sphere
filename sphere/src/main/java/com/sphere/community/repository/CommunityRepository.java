@@ -8,6 +8,7 @@ import java.util.Optional;
 
 public interface CommunityRepository extends JpaRepository<Community, Long> {
     Optional<Community> findByName(String name);
+    List<Community> findTop6ByNameContainingIgnoreCaseOrderByMemberCountDesc(String name);
     boolean existsByName(String name);
     List<Community> findByOwner_Id(Long ownerId);
 }
