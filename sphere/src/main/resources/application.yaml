@@ -55,8 +55,8 @@ news:
 
 logging:
   level:
-    org.springframework.web.socket: DEBUG
-    org.springframework.messaging: DEBUG
+    org.springframework.web.socket: INFO
+    org.springframework.messaging: INFO
 
 aws:
   s3:
