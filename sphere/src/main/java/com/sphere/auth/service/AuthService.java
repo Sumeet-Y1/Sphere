@@ -12,8 +12,8 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-@Service
+ 
+@Service  
 @RequiredArgsConstructor
 public class AuthService {
 
@@ -50,12 +50,12 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
+        String identifier = request.getIdentifier().trim();
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(identifier, request.getPassword())
         );
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = findByLoginIdentifier(identifier);
 
         if (!user.isEnabled()) {
             throw new RuntimeException("Please verify your email before logging in!");
@@ -71,12 +71,12 @@ public class AuthService {
     }
 
     public AuthResponse adminLogin(LoginRequest request) {
+        String identifier = request.getIdentifier().trim();
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(identifier, request.getPassword())
         );
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = findByLoginIdentifier(identifier);
 
         if (!user.isEnabled()) {
             throw new RuntimeException("Account not verified!");
@@ -97,5 +97,11 @@ public class AuthService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
-    } 
+    }
+
+    private User findByLoginIdentifier(String identifier) {
+        return userRepository.findByEmailIgnoreCase(identifier)
+                .or(() -> userRepository.findByUsernameIgnoreCase(identifier))
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
 }
