@@ -24,18 +24,21 @@ public class AuthService {
     private final OtpService otpService;
 
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+        String username = request.getUsername().trim();
+        String email = request.getEmail().trim();
+
+        if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new RuntimeException("Email already in use");
         }
-        if (userRepository.existsByUsername(request.getUsername())) {
+        if (userRepository.existsByUsernameIgnoreCase(username)) {
             throw new RuntimeException("Username already taken");
         }
 
-        String defaultAvatar = "https://api.dicebear.com/7.x/avataaars/svg?seed=" + request.getUsername();
+        String defaultAvatar = "https://api.dicebear.com/7.x/avataaars/svg?seed=" + username;
 
         User user = User.builder()
-                .username(request.getUsername())
-                .email(request.getEmail())
+                .username(username)
+                .email(email)
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role(Role.USER)
                 .avatarUrl(defaultAvatar)
@@ -43,7 +46,7 @@ public class AuthService {
                 .build();
 
         userRepository.save(user);
-        otpService.sendOtp(request.getEmail());
+        otpService.sendOtp(email);
 
         return new AuthResponse(null, user.getUsername(), user.getEmail(), user.getRole().name(),
                 user.getAvatarUrl(), user.getAuthProvider().name(), user.getTheme());

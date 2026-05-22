@@ -52,7 +52,8 @@ public class UserService {
             if (normalizedUsername.isEmpty()) {
                 throw new RuntimeException("Username cannot be empty");
             }
-            if (!normalizedUsername.equals(user.getUsername()) && userRepository.existsByUsername(normalizedUsername)) {
+            if (!normalizedUsername.equalsIgnoreCase(user.getUsername())
+                    && userRepository.existsByUsernameIgnoreCase(normalizedUsername)) {
                 throw new RuntimeException("Username is already taken");
             }
 

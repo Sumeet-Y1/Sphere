@@ -32,7 +32,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String picture = oAuth2User.getAttribute("picture");
 
         // find or create user
-        User user = userRepository.findByEmail(email).orElseGet(() -> {
+        User user = userRepository.findByEmailIgnoreCase(email).orElseGet(() -> {
             String username = generateUsername(name);
             return userRepository.save(User.builder()
                     .email(email)
@@ -60,9 +60,12 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
     private String generateUsername(String name) {
         String base = name.toLowerCase().replaceAll("\\s+", "").replaceAll("[^a-z0-9]", "");
+        if (base.isBlank()) {
+            base = "user";
+        }
         String username = base;
         int counter = 1;
-        while (userRepository.existsByUsername(username)) {
+        while (userRepository.existsByUsernameIgnoreCase(username)) {
             username = base + counter++;
         }
         return username;

@@ -26,7 +26,7 @@ public class BlockService {
         User blocker = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        User blocked = userRepository.findByUsername(username)
+        User blocked = userRepository.findByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (blocker.getId().equals(blocked.getId())) {
@@ -56,7 +56,7 @@ public class BlockService {
         User blocker = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        User blocked = userRepository.findByUsername(username)
+        User blocked = userRepository.findByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         Block block = blockRepository.findByBlockerAndBlocked(blocker, blocked)
